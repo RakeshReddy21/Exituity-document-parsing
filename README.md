@@ -29,42 +29,6 @@ This is the backend for the Exituity Document Parsing Module assignment. It proc
   - `xlsx` - Excel data extraction
   - Native `fs` - TXT file reading
 
-## Installation
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Environment Setup
-Create a `.env` file in the Backend directory:
-
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/exituity
-```
-
-### 3. Start MongoDB
-**Option A: Local MongoDB**
-```bash
-sudo systemctl start mongodb
-```
-
-**Option B: MongoDB Atlas (Cloud)**
-```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/exituity
-```
-
-### 4. Run the Server
-**Development mode (with auto-restart):**
-```bash
-npm run dev
-```
-
-**Production mode:**
-```bash
-npm start
-```
 
 ## API Endpoints
 
@@ -201,32 +165,6 @@ GET /api/documents?page=1&limit=10&fileType=pdf&status=completed
 }
 ```
 
-## Project Structure
-
-```
-Backend/
-├── config/
-│   └── connectDB.js          # MongoDB connection
-├── controllers/
-│   └── documentController.js # Business logic
-├── middleware/
-│   └── upload.js             # Multer configuration
-├── models/
-│   └── Document.js           # MongoDB schema
-├── Routes/
-│   ├── index.js              # Main router
-│   └── documentRoutes.js     # Document routes
-├── utils/
-│   ├── docxParser.js         # DOCX parser
-│   ├── excelParser.js        # Excel parser
-│   ├── pdfParser.js          # PDF parser
-│   └── txtParser.js          # TXT parser
-├── uploads/                  # Uploaded files (auto-created)
-├── .env                      # Environment variables
-├── index.js                  # Entry point
-└── package.json              # Dependencies
-```
-
 ## Document Processing Flow
 
 1. **Upload:** Client uploads file via POST /api/upload
@@ -243,53 +181,6 @@ Backend/
 - **completed:** Successfully extracted and stored
 - **failed:** Extraction failed (error message stored)
 
-## Testing
-
-### Automated Test Suite
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run specific test file
-npm test tests/test.js
-```
-
-### Manual Testing with cURL:
-```bash
-# Test API health
-curl http://localhost:5000/api/test
-
-# Upload document
-curl -X POST -F "document=@path/to/file.pdf" http://localhost:5000/api/upload
-
-# Get all documents with pagination
-curl "http://localhost:5000/api/documents?page=1&limit=5"
-
-# Get specific document
-curl http://localhost:5000/api/documents/{document_id}
-
-# Get document progress
-curl http://localhost:5000/api/documents/{document_id}/progress
-
-# Delete document
-curl -X DELETE http://localhost:5000/api/documents/{document_id}
-```
-
-### Frontend Testing:
-1. Open http://localhost:5000 in your browser
-2. Use the drag-and-drop interface to upload files
-3. Monitor real-time progress updates
-4. View extracted text and tables
-5. Test all CRUD operations
-
-### Using Postman:
-1. Import the API collection
-2. Use POST request for upload with `multipart/form-data`
-3. Body → form-data → key: `document` → type: File
-4. Test all endpoints with proper error handling
 
 ## Performance & Optimization
 
@@ -321,10 +212,3 @@ curl -X DELETE http://localhost:5000/api/documents/{document_id}
 - 🔄 **Caching Layer**: Redis integration for improved performance
 - 🔄 **Document Versioning**: Track changes and maintain document history
 - 🔄 **Search Functionality**: Full-text search across all documents
-
-## Notes
-
-- Files are stored locally in the `uploads/` directory
-- Processing happens asynchronously after upload
-- Large text fields are excluded from list view for performance
-- MongoDB indexing added for efficient queries
