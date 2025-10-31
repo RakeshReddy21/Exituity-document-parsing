@@ -1,105 +1,54 @@
 # Exituity Backend - Document Parsing Module
 
 ## Overview
-This is the backend for the Exituity Document Parsing Module assignment. It processes various document types (PDF, DOCX, XLSX, TXT) and extracts structured text and table data.
+I have developed this backend as part of the Exituity Document Parsing Module assignment. The system processes various document types (PDF, DOCX, XLSX, TXT, images) and extracts structured text and table data in a standardized JSON format with metadata.
 
-## Features
-- ✅ **Multi-format Support**: PDF, DOCX, XLSX, XLS, TXT, JPG, JPEG, PNG
-- ✅ **Advanced Text Extraction**: OCR for images, native parsing for documents
-- ✅ **Table Extraction**: From PDF, DOCX, and Excel files with structure preservation
-- ✅ **Real-time Progress Tracking**: Live updates during document processing
-- ✅ **Comprehensive Validation**: File type, size, and format validation
-- ✅ **Pagination & Filtering**: Efficient document listing with search capabilities
-- ✅ **Error Handling**: Detailed error messages with error codes
-- ✅ **Metadata Tracking**: Page count, confidence scores, processing timestamps
-- ✅ **Asynchronous Processing**: Non-blocking document processing
-- ✅ **MongoDB Integration**: Cloud-hosted database with optimized queries
-- ✅ **RESTful API**: Complete CRUD operations with proper HTTP status codes
-- ✅ **Modern Frontend**: Beautiful, responsive UI with drag-and-drop support
-- ✅ **Test Suite**: Comprehensive automated testing with Jest
+## Dependencies
 
-## Tech Stack
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** MongoDB with Mongoose
-- **File Upload:** Multer
-- **Document Parsers:**
-  - `pdf-parse` - PDF text extraction
-  - `mammoth` - DOCX text extraction
-  - `xlsx` - Excel data extraction
-  - Native `fs` - TXT file reading
+### Core Dependencies:
+- **express** (^5.1.0) - Web framework for RESTful API
+- **mongoose** (^8.19.2) - MongoDB object modeling
+- **multer** (^2.0.2) - File upload handling
+- **cors** (^2.8.5) - Cross-origin resource sharing
+- **dotenv** (^17.2.3) - Environment variable management
 
+### Document Parsing Libraries:
+- **pdf-parse** (^2.4.5) - PDF text extraction
+- **mammoth** (^1.11.0) - DOCX text extraction
+- **xlsx** (^0.18.5) - Excel file parsing (supports XLS and XLSX)
+- **tesseract.js** (^6.0.1) - OCR for image files (JPG, JPEG, PNG)
+- **uuid** (^13.0.0) - Unique identifier generation
 
-## API Endpoints
+### Development Dependencies:
+- **nodemon** (^3.1.10) - Development server with auto-restart
+- **jest** (^30.2.0) - Testing framework
+- **supertest** (^7.1.4) - HTTP assertions for testing
 
-### Base URL: `http://localhost:5000/api`
+## Design Choices
 
-### 1. Upload Document
-```http
-POST /api/upload
-Content-Type: multipart/form-data
-```
+### Architecture
+I implemented a Model-View-Controller (MVC) architecture to separate concerns:
+- **Models**: MongoDB schemas using Mongoose for data persistence
+- **Controllers**: Business logic for document processing
+- **Routes**: RESTful API endpoints
+- **Utils**: Parser modules for each supported file type
 
-**Request:**
-- Form field name: `document`
-- Supported formats: PDF, DOCX, XLSX, XLS, TXT, JPG, JPEG, PNG
-- Max file size: 10MB
+### Processing Approach
+I chose asynchronous document processing to ensure the API remains responsive. Documents are:
+1. Uploaded and stored with unique filenames
+2. Metadata saved to MongoDB with "pending" status
+3. Processed in background based on file type
+4. Status updated to "completed" or "failed" with extracted data
 
-**Response:**
+### Output Format
+All parsers return a consistent JSON structure:
 ```json
 {
-  "message": "Document uploaded successfully",
-  "document": {
-    "id": "document_id",
-    "fileName": "example.pdf",
-    "fileType": "pdf",
-    "status": "pending",
-    "uploadedAt": "2025-01-28T..."
-  }
-}
-```
-
-### 2. Get All Documents
-```http
-GET /api/documents
-```
-
-**Response:**
-```json
-{
-  "count": 2,
-  "documents": [
-    {
-      "_id": "document_id",
-      "originalName": "example.pdf",
-      "fileType": "pdf",
-      "processingStatus": "completed",
-      "metadata": {
-        "pageCount": 5,
-        "extractionConfidence": 95
-      },
-      "createdAt": "2025-01-28T..."
-    }
-  ]
-}
-```
-
-### 3. Get Document by ID
-```http
-GET /api/documents/:id
-```
-
-**Response:**
-```json
-{
-  "_id": "document_id",
-  "originalName": "example.pdf",
-  "fileType": "pdf",
-  "processingStatus": "completed",
-  "extractedText": "Full extracted text...",
-  "extractedTables": [
+  "text": "extracted text content",
+  "tables": [
     {
       "pageNumber": 1,
+      "tableIndex": 0,
       "data": [["Header1", "Header2"], ["Row1", "Row2"]],
       "structure": {
         "rows": 2,
@@ -108,107 +57,78 @@ GET /api/documents/:id
     }
   ],
   "metadata": {
-    "pageCount": 5,
+    "pageCount": 1,
     "extractionConfidence": 95,
-    "processedPages": [1, 2, 3, 4, 5],
+    "processedPages": [1],
     "extractionDate": "2025-01-28T..."
   }
 }
 ```
 
-### 4. Delete Document
-```http
-DELETE /api/documents/:id
+### Library Selection Rationale
+
+1. **pdf-parse**: Selected for its simplicity and reliability in extracting text from PDFs. It provides good performance and handles most PDF formats well. For table extraction, I implemented pattern-based detection from extracted text.
+
+2. **mammoth**: Chose this library for DOCX parsing as it effectively handles Microsoft Word documents and extracts text content reliably. Table detection uses pattern-based analysis on extracted text.
+
+3. **tesseract.js**: Implemented for OCR functionality as it supports both client-side and server-side processing with reasonable accuracy for text-based images.
+
+4. **xlsx**: Selected for Excel parsing because it supports both legacy XLS and modern XLSX formats, providing comprehensive spreadsheet data extraction.
+
+### Database Choice
+I selected MongoDB for its flexibility in storing varied document structures and metadata. It allows easy schema evolution and efficient querying of document collections.
+
+## Assumptions
+
+1. **File Size Limit**: I assumed a 10MB maximum file size limit to balance usability and server resource constraints.
+
+2. **Table Extraction**: I implemented pattern-based table detection for PDFs and DOCX files using text patterns (tab-separated or multiple whitespace-separated values). This works well for simple, well-formatted tables. For complex tables with merged cells or irregular formatting, more advanced table extraction libraries (like `pdf-table-extractor` or `pdfjs-dist`) would be needed.
+
+3. **Image Processing**: I assumed images contain primarily text-based content suitable for OCR processing. Handwritten text or complex layouts may require more advanced OCR solutions.
+
+4. **Deployment**: I designed this assuming a single-server deployment. For distributed systems or cloud deployments, additional considerations for file storage, database scaling, and session management would be needed.
+
+5. **Output Format**: I standardized all output to JSON format as specified in the requirements. The format includes text content, extracted tables (with structure preservation), and metadata (page number, file type, extraction confidence).
+
+6. **Error Handling**: I assumed that processing failures should be gracefully handled with error messages stored in the database, allowing users to understand what went wrong during extraction.
+
+## Installation
+
+1. Install dependencies:
+```bash
+npm install
 ```
 
-**Response:**
-```json
-{
-  "message": "Document deleted successfully",
-  "deletedDocument": {
-    "id": "document_id",
-    "fileName": "example.pdf",
-    "fileType": "pdf"
-  }
-}
+2. Create a `.env` file:
+```env
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/exituity
 ```
 
-### 5. Get Document Progress
-```http
-GET /api/documents/:id/progress
+3. Start the server:
+```bash
+npm start
 ```
 
-**Response:**
-```json
-{
-  "documentId": "document_id",
-  "status": "processing",
-  "progress": 75,
-  "step": "Performing OCR on image",
-  "elapsed": 2500
-}
+## Project Structure
+
 ```
-
-### 6. Advanced Document Listing
-```http
-GET /api/documents?page=1&limit=10&fileType=pdf&status=completed
+Backend/
+├── config/
+│   └── connectDB.js          # MongoDB connection
+├── controllers/
+│   └── documentController.js # Business logic
+├── middleware/
+│   └── upload.js             # Multer configuration
+├── models/
+│   └── Document.js           # MongoDB schema
+├── Routes/
+│   ├── index.js              # Main router
+│   └── documentRoutes.js     # Document routes
+└── utils/
+    ├── docxParser.js         # DOCX parser
+    ├── excelParser.js        # Excel parser
+    ├── pdfParser.js          # PDF parser
+    ├── ocrParser.js          # OCR parser
+    └── txtParser.js          # TXT parser
 ```
-
-**Response:**
-```json
-{
-  "count": 5,
-  "total": 25,
-  "page": 1,
-  "totalPages": 3,
-  "documents": [...]
-}
-```
-
-## Document Processing Flow
-
-1. **Upload:** Client uploads file via POST /api/upload
-2. **Storage:** File saved to `uploads/` directory with unique name
-3. **Database:** Document metadata stored in MongoDB with status "pending"
-4. **Processing:** Background process extracts text/tables based on file type
-5. **Update:** Document status updated to "completed" or "failed"
-6. **Retrieve:** Client can fetch parsed content via GET endpoints
-
-## Processing Statuses
-
-- **pending:** File uploaded, awaiting processing
-- **processing:** Currently extracting text/data
-- **completed:** Successfully extracted and stored
-- **failed:** Extraction failed (error message stored)
-
-
-## Performance & Optimization
-
-### Current Optimizations:
-- ✅ **Asynchronous Processing**: Non-blocking document processing
-- ✅ **Progress Tracking**: Real-time updates during processing
-- ✅ **Pagination**: Efficient document listing with configurable limits
-- ✅ **Memory Management**: Automatic cleanup of progress trackers
-- ✅ **Error Recovery**: Graceful handling of processing failures
-- ✅ **Database Indexing**: Optimized queries for fast document retrieval
-
-### Performance Metrics:
-- **Upload Speed**: ~100ms for typical documents
-- **Processing Time**: 2-5 seconds for PDFs, 1-3 seconds for DOCX/TXT
-- **OCR Processing**: 5-15 seconds depending on image complexity
-- **Memory Usage**: <100MB for typical operations
-- **Concurrent Processing**: Supports multiple documents simultaneously
-
-## Future Enhancements
-
-### Planned Features:
-- 🔄 **WebSocket Integration**: Real-time progress updates via WebSockets
-- 🔄 **Batch Processing**: Upload and process multiple documents at once
-- 🔄 **User Authentication**: JWT-based authentication and authorization
-- 🔄 **File Ownership**: User-specific document management
-- 🔄 **Advanced OCR**: Support for handwritten text and complex layouts
-- 🔄 **Export Options**: Download parsed data in various formats (JSON, CSV, XML)
-- 🔄 **API Rate Limiting**: Prevent abuse and ensure fair usage
-- 🔄 **Caching Layer**: Redis integration for improved performance
-- 🔄 **Document Versioning**: Track changes and maintain document history
-- 🔄 **Search Functionality**: Full-text search across all documents
